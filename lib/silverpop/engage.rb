@@ -515,9 +515,6 @@ module Silverpop
     end
 
     def xml_add_recipient(list_id, email, extra_columns, created_from)
-      extra_columns = extra_columns.map do |c|
-        xml_add_recipient_column(c[:name], c[:value])
-      end
       xml = xml_wrapper do
         <<-XML
           <AddRecipient>
@@ -528,34 +525,27 @@ module Silverpop
               <NAME>EMAIL</NAME>
               <VALUE>#{email}</VALUE>
             </COLUMN>
-            #{extra_columns.join}
+            #{extra_columns.map { |c| xml_add_recipient_column(c[:name], c[:value]) }.join}
           </AddRecipient>
         XML
       end
     end
 
     def xml_update_recipient(list_id, old_email, new_email, extra_columns, created_from)
-      xml = ( '<Envelope><Body>'+
-                '<UpdateRecipient>'+
-                  '<LIST_ID>%s</LIST_ID>'+
-                  '<CREATED_FROM>%s</CREATED_FROM>'+
-                  '<OLD_EMAIL>%s</OLD_EMAIL>'+
-                  '<COLUMN>'+
-                    '<NAME>EMAIL</NAME>'+
-                    '<VALUE>%s</VALUE>'+
-                  '</COLUMN>'+
-                '</UpdateRecipient>'+
-              '</Body></Envelope>'
-      ) % [list_id, created_from, old_email, new_email]
-
-      doc = Hpricot::XML(xml)
-      if extra_columns.size > 0
-        extra_columns.each do |c|
-          (doc/:UpdateRecipient).append xml_add_recipient_column(c[:name], c[:value])
-        end
+      xml_wrapper do
+        <<-XML
+          <UpdateRecipient>
+            <LIST_ID>#{list_id}</LIST_ID>
+            <CREATED_FROM>#{created_from}</CREATED_FROM>
+            <OLD_EMAIL>#{old_email}</OLD_EMAIL>
+            <COLUMN>
+              <NAME>EMAIL</NAME>
+              <VALUE>#{new_email}</VALUE>
+            </COLUMN>
+            #{extra_columns.map { |c| xml_add_recipient_column(c[:name], c[:value]) }.join}
+          </UpdateRecipient>
+        XML
       end
-
-      doc.to_s
     end
 
     def xml_add_recipient_column(name, value)
@@ -574,92 +564,72 @@ module Silverpop
     end
 
     def xml_double_opt_in_recipient(list_id, email, extra_columns)
-      ( '<Envelope><Body>'+
-          '<DoubleOptInRecipient>'+
-            '<LIST_ID>%s</LIST_ID>'+
-              '<COLUMN>'+
-                '<NAME>EMAIL</NAME>'+
-                '<VALUE>%s</VALUE>'+
-              '</COLUMN>'+
-          '</DoubleOptInRecipient>'+
-        '</Body></Envelope>'
-      ) % [list_id, email]
+      xml_wrapper do
+        <<-XML
+          <DoubleOptInRecipient>
+            <LIST_ID>#{list_id}</LIST_ID>
+              <COLUMN>
+                <NAME>EMAIL</NAME>
+                <VALUE>#{email}</VALUE>
+              </COLUMN>
+          </DoubleOptInRecipient>
+        XML
+      end
     end
 
     def xml_opt_out_recipient(list_id, email)
-      ( '<Envelope><Body>'+
-          '<OptOutRecipient>'+
-            '<LIST_ID>%s</LIST_ID>'+
-            '<EMAIL>%s</EMAIL>'+
-          '</OptOutRecipient>'+
-        '</Body></Envelope>'
-      ) % [list_id, email]
+      xml_wrapper do
+        <<-XML
+          <OptOutRecipient>
+            <LIST_ID>#{list_id}</LIST_ID>
+            <EMAIL>#{email}</EMAIL>
+          </OptOutRecipient>
+        XML
+      end
     end
 
     def xml_insert_update_relational_data(table_id, data)
-      ( '<Envelope><Body>'+
-          '<InsertUpdateRelationalTable>'+
-            '<TABLE_ID>%s</TABLE_ID>'+
-            '<ROWS>%s</ROWS>'+
-          '</InsertUpdateRelationalTable>'+
-        '</Body></Envelope>'
-      ) % [table_id, xml_add_relational_rows(data)]
+      xml_wrapper do
+        <<-XML
+          <InsertUpdateRelationalTable>
+            <TABLE_ID>#{table_id}</TABLE_ID>
+            <ROWS>#{xml_add_relational_rows(data)}</ROWS>
+          </InsertUpdateRelationalTable>
+        XML
+      end
     end
 
     def xml_add_relational_rows(data)
-      rows = ''
-      data.each do |row|
-        row = ('<ROW>'+
-          '%s'+
-          '</ROW>'
-        ) % xml_add_relational_row(row)
-        rows << row
-      end
-      rows
+      data.map { |row| "<ROW>#{xml_add_relational_row(row)}</ROW>" }.join
     end
 
     def xml_add_relational_row(row_data)
-      row = ''
-      row_data.each do |column|
-        col = ( '<COLUMN name="%s">'+
-            '<![CDATA[%s]]>'+
-          '</COLUMN>'
-        ) % [column[:name], column[:value]]
-        row << col
-      end
-      row
+      row_data.map do |column|
+        "<COLUMN name=\"#{column[:name]}\"><![CDATA[#{column[:value]}]]></COLUMN>"
+      end.join
     end
 
     def xml_create_relational_table(schema)
-      xml = ('<Envelope><Body>'+
-        '<CreateTable>'+
-          '<TABLE_NAME>%s</TABLE_NAME>'+
-          '<COLUMNS></COLUMNS>'+
-        '</CreateTable>'+
-      '</Body></Envelope>') % [schema[:table_name]]
-
-      doc = Hpricot::XML(xml)
-      if schema[:columns].size > 0
-        schema[:columns].each do |c|
-          element = doc/:COLUMNS
-          if element.innerHTML.empty?
-            (doc/:COLUMNS).innerHTML= xml_add_relational_table_column(c)
-          else
-            (doc/:COLUMNS).append xml_add_relational_table_column(c)
-          end
-        end
+      columns = schema[:columns].map { |c| xml_add_relational_table_column(c) }.join
+      xml_wrapper do
+        <<-XML
+          <CreateTable>
+            <TABLE_NAME>#{schema[:table_name]}</TABLE_NAME>
+            <COLUMNS>#{columns}</COLUMNS>
+          </CreateTable>
+        XML
       end
-
-      doc.to_s
     end
 
     def xml_add_relational_table_column(col)
-      xml = "<COLUMN>"
-      xml << "<NAME>%s</NAME>" % [col[:name]] if col[:name]
-      xml << "<TYPE>%s</TYPE>" % [col[:type]] if col[:type]
-      xml << "<IS_REQUIRED>%s</IS_REQUIRED>" % [col[:is_required]] if col[:is_required]
-      xml << "<KEY_COLUMN>%s</KEY_COLUMN>" % [col[:key_column]] if col[:key_column]
-      xml << "</COLUMN>"
+      <<-XML
+        <COLUMN>
+          #{"<NAME>#{col[:name]}</NAME>" if col[:name]}
+          #{"<TYPE>#{col[:type]}</TYPE>" if col[:type]}
+          #{"<IS_REQUIRED>#{col[:is_required]}</IS_REQUIRED>" if col[:is_required]}
+          #{"<KEY_COLUMN>#{col[:key_column]}</KEY_COLUMN>" if col[:key_column]}
+        </COLUMN>
+      XML
     end
 
     def xml_associate_relational_table(list_id, table_id, field_mappings)
@@ -670,7 +640,7 @@ module Silverpop
             <TABLE_ID>#{table_id}</TABLE_ID>
             <LIST_ID>#{list_id}</LIST_ID>
             #{mappings.join}
-            </JoinTable>
+          </JoinTable>
         XML
       end
     end
