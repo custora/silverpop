@@ -2,9 +2,7 @@ require 'active_support/core_ext/object/blank'
 require 'ostruct'
 
 module Silverpop
-
   class Engage < Silverpop::Base
-
     class << self
       attr_accessor :url, :username, :password
       attr_accessor :ftp_url, :ftp_port, :ftp_username, :ftp_password
@@ -132,63 +130,20 @@ module Silverpop
     end
 
     def raw_recipient_data_export(options, destination_file)
-      xml = "<Envelope><Body><RawRecipientDataExport>"
-
-      options.fields.each_with_object(xml) do |field, string|
-        case field
-          when :columns
-            string << "<COLUMNS>"
-            options.columns.each do |column|
-              string << "<COLUMN><NAME>#{column}</NAME></COLUMN>"
-            end
-            string << "</COLUMNS>"
-          when Symbol
-            string << if (value = options.send(field)) == true
-              "<#{field.upcase}/>"
-            else
-              "<#{field.upcase}>#{value}</#{field.upcase}>"
-            end
-          else
-            raise ArgumentError, "#{field} didn't match any case"
-        end
-      end
-
-      xml << "</RawRecipientDataExport></Body></Envelope>"
-
-      response = query(xml)
-      doc = Hpricot::XML(response)
-      file_name = doc.at('FILE_PATH').innerHTML
-      job_id = doc.at('JOB_ID').innerHTML
-      on_job_ready(job_id) do
-        # because of the net/ftp's lack we have to use Net::FTP.new construction
-        ftp = Net::FTP.new
-        # need for testing
-        ftp_port ? ftp.connect(ftp_url, ftp_port) : ftp.connect(ftp_url)
-        ftp.passive = true # IMPORTANT! SILVERPOP NEEDS THIS OR IT ACTS WEIRD.
-        ftp.login(ftp_username, ftp_password)
-        ftp.chdir('download')
-        ftp.getbinaryfile(file_name, destination_file)
-        ftp.close
-      end
+      response = query(xml_raw_recipient_data_export(options))
+      doc = Nokogiri::XML(response)
+      file_name = doc.at('FILE_PATH').text
+      job_id = doc.at('JOB_ID').text
+      on_job_ready(job_id) { download_from_ftp(file_name, destination_file) }
       self
     end
 
     def export_list(id, fields, destination_file)
       xml = get_list(id, fields)
-      doc = Hpricot::XML(xml)
-      file_name = doc.at('FILE_PATH').innerHTML
-      job_id = doc.at('JOB_ID').innerHTML
-      on_job_ready(job_id) do
-        # because of the net/ftp's lack we have to use Net::FTP.new construction
-        ftp = Net::FTP.new
-        # need for testing
-        ftp_port ? ftp.connect(ftp_url, ftp_port) : ftp.connect(ftp_url)
-        ftp.passive = true # IMPORTANT! SILVERPOP NEEDS THIS OR IT ACTS WEIRD.
-        ftp.login(ftp_username, ftp_password)
-        ftp.chdir('download')
-        ftp.gettextfile(file_name, destination_file)
-        ftp.close
-      end
+      doc = Nokogiri::XML(xml)
+      file_name = doc.at('FILE_PATH').text
+      job_id = doc.at('JOB_ID').text
+      on_job_ready(job_id) { download_from_ftp(file_name, destination_file) }
     end
 
     def import_table(map_file_path, source_file_path)
@@ -217,7 +172,7 @@ module Silverpop
       #               { :index=>2, :name=>'FIRST_NAME', :include=>true },
       #               { :index=>3, :name=>'LAST_NAME', :include=>true } ]
       File.open(file_path, 'w') do |file|
-        file.puts xml_map_file(list_info, columns, mappings, type)
+        file.puts(xml_map_file(list_info, columns, mappings, type))
       end
       file_path
     end
@@ -613,9 +568,42 @@ module Silverpop
       XML
     end
 
+    def xml_raw_recipient_data_export(options)
+      xml_fields = options.fields.map do |field|
+        if field == :columns
+          <<-XML
+            <COLUMNS>
+              #{options.columns.map { |c| "<COLUMN><NAME>#{c}</NAME></COLUMN>" }.join}
+            </COLUMNS>
+          XML
+        elsif field.is_a?(Symbol)
+          if options.send(field) == true
+            "<#{field.upcase}/>"
+          else
+            "<#{field.upcase}>#{options.send(field)}</#{field.upcase}>"
+          end
+        else
+          raise ArgumentError, "Invalid field '#{field}' (#{field.class})."
+        end
+      end
+      xml_wrapper { "<RawRecipientDataExport>#{xml_fields}</RawRecipientDataExport>" }
+    end
+
     # Wraps the result of the block in envelope and body tags.
     def xml_wrapper(&block)
       "<Envelope><Body>#{block.call}</Body></Envelope>"
+    end
+
+    def download_from_ftp(file_name, destination_file)
+      # because of the net/ftp's lack we have to use Net::FTP.new construction
+      ftp = Net::FTP.new
+      # need for testing
+      ftp_port ? ftp.connect(ftp_url, ftp_port) : ftp.connect(ftp_url)
+      ftp.passive = true # IMPORTANT! SILVERPOP NEEDS THIS OR IT ACTS WEIRD.
+      ftp.login(ftp_username, ftp_password)
+      ftp.chdir('download')
+      ftp.getbinaryfile(file_name, destination_file)
+      ftp.close
     end
   end
 end
