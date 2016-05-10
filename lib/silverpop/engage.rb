@@ -42,8 +42,8 @@ module Silverpop
       logout if @session_id || @session_encoding
       doc = Nokogiri::XML(query(xml_login(username, password)))
       if doc.at('SUCCESS').text == 'true'
-        @session_id = doc.at('SESSIONID').innerHTML
-        @session_encoding = doc.at('SESSION_ENCODING').innerHTML
+        @session_id = doc.at('SESSIONID').text
+        @session_encoding = doc.at('SESSION_ENCODING').text
       end
       success?
     end
