@@ -52,7 +52,7 @@ module Silverpop
 
     def logout
       return false unless logged_in?
-      response_xml = query(xml_logout)
+      query(xml_logout)
       if success?
         @session_id = nil
         @session_encoding = nil
@@ -91,15 +91,15 @@ module Silverpop
       # * 13 – Suppression Lists
       # * 15 – Relational Tables
       # * 18 – Contact Lists
-      response_xml = query( xml_get_lists(visibility, list_type) )
+      query(xml_get_lists(visibility, list_type))
     end
 
     def get_list(id, fields)
-      response_xml = query( xml_export_list(id, fields) )
+      query(xml_export_list(id, fields))
     end
 
     def calculate_query(query_id, email = nil)
-      response_xml = query( xml_calculate_query(query_id, email) )
+      query(xml_calculate_query(query_id, email))
     end
 
     def import_list(map_file_path, source_file_path)
@@ -110,13 +110,9 @@ module Silverpop
         ftp.puttextfile(map_file_path)
         ftp.puttextfile(source_file_path)
       end
-
       map_file_ftp_path = File.basename(map_file_path)
       source_file_ftp_path = File.basename(source_file_path)
-
-      response_xml = query xml_import_list(
-                              File.basename(map_file_path),
-                              File.basename(source_file_path) )
+      query xml_import_list(File.basename(map_file_path), File.basename(source_file_path))
     end
 
     class RawRecipientDataOptions < OpenStruct
@@ -163,24 +159,17 @@ module Silverpop
       doc = Hpricot::XML(response)
       file_name = doc.at('FILE_PATH').innerHTML
       job_id = doc.at('JOB_ID').innerHTML
-
       on_job_ready(job_id) do
-
         # because of the net/ftp's lack we have to use Net::FTP.new construction
         ftp = Net::FTP.new
-
         # need for testing
         ftp_port ? ftp.connect(ftp_url, ftp_port) : ftp.connect(ftp_url)
-
         ftp.passive = true # IMPORTANT! SILVERPOP NEEDS THIS OR IT ACTS WEIRD.
         ftp.login(ftp_username, ftp_password)
         ftp.chdir('download')
-
         ftp.getbinaryfile(file_name, destination_file)
-
         ftp.close
       end
-
       self
     end
 
@@ -189,21 +178,15 @@ module Silverpop
       doc = Hpricot::XML(xml)
       file_name = doc.at('FILE_PATH').innerHTML
       job_id = doc.at('JOB_ID').innerHTML
-
       on_job_ready(job_id) do
-
         # because of the net/ftp's lack we have to use Net::FTP.new construction
         ftp = Net::FTP.new
-
         # need for testing
         ftp_port ? ftp.connect(ftp_url, ftp_port) : ftp.connect(ftp_url)
-
         ftp.passive = true # IMPORTANT! SILVERPOP NEEDS THIS OR IT ACTS WEIRD.
         ftp.login(ftp_username, ftp_password)
         ftp.chdir('download')
-
         ftp.gettextfile(file_name, destination_file)
-
         ftp.close
       end
     end
@@ -216,13 +199,9 @@ module Silverpop
         ftp.puttextfile(map_file_path)
         ftp.puttextfile(source_file_path)
       end
-
       map_file_ftp_path = File.basename(map_file_path)
       source_file_ftp_path = File.basename(source_file_path)
-
-      response_xml = query xml_import_table(
-                              File.basename(map_file_path),
-                              File.basename(source_file_path) )
+      query xml_import_table(File.basename(map_file_path), File.basename(source_file_path))
     end
 
     def create_map_file (file_path, list_info, columns, mappings, type = "LIST")
@@ -237,11 +216,9 @@ module Silverpop
       # mappings  = [ { :index=>1, :name=>'EMAIL', :include=>true },
       #               { :index=>2, :name=>'FIRST_NAME', :include=>true },
       #               { :index=>3, :name=>'LAST_NAME', :include=>true } ]
-
       File.open(file_path, 'w') do |file|
         file.puts xml_map_file(list_info, columns, mappings, type)
       end
-
       file_path
     end
 
@@ -256,8 +233,7 @@ module Silverpop
       # * 1 – Added manually
       # * 2 – Opted in
       # * 3 – Created from tracking list
-      response_xml =  query(xml_add_recipient(
-                        list_id, email, extra_columns, created_from) )
+      query(xml_add_recipient(list_id, email, extra_columns, created_from))
     end
 
     def update_recipient(list_id, old_email, new_email=nil, extra_columns=[], created_from=1)
@@ -269,32 +245,31 @@ module Silverpop
       # * 2 – Opted in
       # * 3 – Created from tracking list
       new_email = old_email if new_email.nil?
-      response_xml =  query(xml_update_recipient(
-                        list_id, old_email, new_email, extra_columns, created_from) )
+      query(xml_update_recipient(list_id, old_email, new_email, extra_columns, created_from))
     end
 
     def remove_recipient(list_id, email)
-      response_xml = query( xml_remove_recipient(list_id, email) )
+      query(xml_remove_recipient(list_id, email))
     end
 
     def double_opt_in_recipient(list_id, email, extra_columns=[])
-      response_xml = query xml_double_opt_in_recipient(list_id, email, extra_columns)
+      query(xml_double_opt_in_recipient(list_id, email, extra_columns))
     end
 
     def opt_out_recipient(list_id, email)
-      response_xml = query xml_opt_out_recipient(list_id, email)
+      query(xml_opt_out_recipient(list_id, email))
     end
 
     def insert_update_relational_data(table_id, data)
-      response_xml = query xml_insert_update_relational_data(table_id, data)
+      query(xml_insert_update_relational_data(table_id, data))
     end
 
     def create_relational_table(schema)
-      response_xml = query xml_create_relational_table(schema)
+      query(xml_create_relational_table(schema))
     end
 
     def associate_relational_table(list_id, table_id, field_mappings)
-      response_xml = query xml_associate_relational_table(list_id, table_id, field_mappings)
+      query(xml_associate_relational_table(list_id, table_id, field_mappings))
     end
 
   ###
@@ -302,19 +277,18 @@ module Silverpop
   ###
   protected
 
-    def map_type(type) # some API calls want a number, some want a name. This maps the name back to the number
-      {
-        "TEXT" => 0,
-        "YESNO" => 1,
-        "NUMERIC" => 2,
-        "DATE" => 3,
-        "TIME" => 4,
-        "COUNTRY" => 5,
-        "SELECTION" => 6,
-        "SEGMENTING" => 8,
-        "EMAIL" => 9
-      }[type]
-    end
+    # Some API calls want a number, some want a name.
+    COLUMN_TYPES = {
+      "TEXT" => 0,
+      "YESNO" => 1,
+      "NUMERIC" => 2,
+      "DATE" => 3,
+      "TIME" => 4,
+      "COUNTRY" => 5,
+      "SELECTION" => 6,
+      "SEGMENTING" => 8,
+      "EMAIL" => 9
+    }
 
     def log_error
       logger.debug '*** Silverpop::Engage Error: ' + error_message
