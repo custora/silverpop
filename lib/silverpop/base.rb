@@ -56,35 +56,38 @@ module Silverpop
       end
     end
 
-    def query(xml, session_encoding='')
-      u = URI.parse url
-      http, resp    = Net::HTTP.new(u.host, u.port), ''
-      http.use_ssl  = true
+    def query(xml, session_encoding = '')
+      u = URI.parse(url)
+      http, resp = Net::HTTP.new(u.host, u.port), ''
+      http.use_ssl = true
       http.start do |http|
         path = u.path + session_encoding
-        resp = http.post path, xml, {'Content-type' => 'text/xml'}
+        resp = http.post(path, xml, { 'Content-type' => 'text/xml' })
       end
       resp.body
     end
 
-    def strip_cdata string
+    def strip_cdata(string)
       string.sub('<![CDATA[', '').sub(']]>', '')
     end
 
     private
 
+    JOB_POLLING_WAIT_SECONDS = 5
+    SilverpopJobTimeout = Class.new(StandardError)
+
     def on_job_ready(job_id)
       while ['WAITING', 'RUNNING'].include?(status = get_job_status(job_id))
         puts "#{Time.now} Job #{job_id}: #{status}"
-        sleep 5
+        sleep @job_polling_wait_seconds || JOB_POLLING_WAIT_SECONDS
       end
       puts "#{Time.now} Job #{job_id}: #{status}"
 
-      if status == 'COMPLETE'
-        yield
-      else
-        raise ArgumentError, "#{status} status, Silverpop service didn't finish #{job_id} job"
+      unless status == 'COMPLETE'
+        raise SilverpopJobTimeout, "Status: #{status}. Silverpop service didn't finish job #{job_id}."
       end
+
+      yield
     end
   end
 end
