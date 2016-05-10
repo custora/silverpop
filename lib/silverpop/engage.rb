@@ -255,7 +255,7 @@ module Silverpop
           <Login>
             <USERNAME>#{username}</USERNAME>
             <PASSWORD>#{password}</PASSWORD>
-          <Login>
+          </Login>
         XML
       end
     end
