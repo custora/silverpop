@@ -96,6 +96,10 @@ module Silverpop
       query(xml_export_list(id, fields))
     end
 
+    def create_contact_list(database_id:, name:, visibility: 1, parent_folder_id: nil, parent_folder_path: nil)
+      query(xml_create_contact_list(database_id, name, visibility, parent_folder_id, parent_folder_path))
+    end
+
     def calculate_query(query_id, email = nil)
       query(xml_calculate_query(query_id, email))
     end
@@ -225,6 +229,13 @@ module Silverpop
 
     def associate_relational_table(list_id, table_id, field_mappings)
       query(xml_associate_relational_table(list_id, table_id, field_mappings))
+    end
+
+    ###
+    #   MANAGE MAILINGS
+    ###
+    def save_mailing(header:, html_body:, aol_body: nil, text_body: nil, click_throughs: [])
+      query(xml_save_mailing(header, html_body, aol_body, text_body, click_throughs))
     end
 
   ###
@@ -592,7 +603,7 @@ module Silverpop
     # Saves a new or updating an existing mailing template that may be used against a
     # Database, Contact List or Query.  This will replace any existing template with the
     # same MailingName element, and will update any existing template specified with a MailingId.
-    def xml_save_mailing(header:, html_body:, aol_body: nil, text_body: nil, click_throughs: [])
+    def xml_save_mailing(header, html_body, aol_body, text_body, click_throughs)
       xml_wrapper do
         <<-XML
           <SaveMailing>
@@ -635,6 +646,20 @@ module Silverpop
           <ClickThroughName>#{ct[:name]}</ClickThroughName>
           <ClickThroughURL>#{ct[:url]}</ClickThroughURL>
           <ClickThroughType>#{ct[:type] || 2}</ClickThroughType>
+        XML
+      end
+    end
+
+    def xml_create_contact_list(database_id, name, visibility, parent_folder_id, parent_folder_path)
+      xml_wrapper do
+        <<-XML
+          <CreateContactList>
+            <DATABASE_ID>#{database_id}</DATABASE_ID>
+            <CONTACT_LIST_NAME>#{name}</CONTACT_LIST_NAME>
+            <VISIBILITY>#{visibility}</VISIBILITY>
+            #{"<PARENT_FOLDER_ID>#{parent_folder_id}</PARENT_FOLDER_ID>" if parent_folder_id}
+            #{"<PARENT_FOLDER_PATH>#{parent_folder_path}</PARENT_FOLDER_PATH>" if parent_folder_path}
+          </CreateContactList>
         XML
       end
     end
