@@ -40,10 +40,6 @@ module Silverpop
     ###
     #   SESSION MANAGEMENT
     ###
-    def logged_in?
-      @session_id && @session_encoding
-    end
-
     def login
       logout if @session_id || @session_encoding
       doc = Nokogiri::XML(query(xml_login(username, password)))
@@ -62,6 +58,10 @@ module Silverpop
         @session_encoding = nil
       end
       success?
+    end
+
+    def logged_in?
+      @session_id && @session_encoding
     end
 
     ###
@@ -321,86 +321,87 @@ module Silverpop
     end
 
     def xml_login(username, password)
-      ( '<Envelope><Body>'+
-          '<Login>'+
-            '<USERNAME>%s</USERNAME>'+
-            '<PASSWORD>%s</PASSWORD>'+
-          '</Login>'+
-        '</Body></Envelope>'
-      ) % [username, password]
+      xml_wrapper do
+        <<-XML
+          <Login>
+            <USERNAME>#{username}</USERNAME>
+            <PASSWORD>#{password}</PASSWORD>
+          <Login>
+        XML
+      end
     end
 
     def xml_logout
-      '<Envelope><Body><Logout/></Body></Envelope>'
+      xml_wrapper { "<Logout/>" }
     end
 
     def xml_get_job_status(job_id)
-      ( '<Envelope><Body>'+
-          '<GetJobStatus>'+
-            '<JOB_ID>%s</JOB_ID>'+
-          '</GetJobStatus>'+
-        '</Body></Envelope>'
-      ) % [job_id]
+      xml_wrapper do
+        <<-XML
+          <GetJobStatus>
+            <JOB_ID>#{job_id}</JOB_ID>
+          </GetJobStatus>
+        XML
+      end
     end
 
     def xml_get_lists(visibility, list_type)
-      (  '<Envelope><Body>'+
-          '<GetLists>'+
-            '<VISIBILITY>%s</VISIBILITY>'+
-            '<LIST_TYPE>%s</LIST_TYPE>'+
-          '</GetLists>' +
-        '</Body></Envelope>'
-      ) % [visibility.to_s, list_type.to_s]
+      xml_wrapper do
+        <<-XML
+          <GetLists>
+            <VISIBILITY>#{visibility}</VISIBILITY>
+            <LIST_TYPE>#{list_type}</LIST_TYPE>
+          </GetLists>
+        XML
+      end
     end
 
     def xml_export_list(id, fields)
-      ( '<Envelope><Body>'+
-          '<ExportList>'+
-            '<LIST_ID>%d</LIST_ID>'+
-            '<EXPORT_TYPE>ALL</EXPORT_TYPE>'+
-            '<EXPORT_FORMAT>CSV</EXPORT_FORMAT>'+
-            '<ADD_TO_STORED_FILES/>'+
-            '<EXPORT_COLUMNS>'+
-              fields.map { |f| '<COLUMN>%s</COLUMN>' % f }.join+
-            '</EXPORT_COLUMNS>'+
-          '</ExportList>'+
-        '</Body></Envelope>'
-      ) % id
+      columns = fields.map { |f| "<COLUMN>#{f}</COLUMN>" }.join
+      xml_wrapper do
+        <<-XML
+          <ExportList>
+            <LIST_ID>#{id}</LIST_ID>
+            <EXPORT_TYPE>ALL</EXPORT_TYPE>
+            <EXPORT_FORMAT>CSV</EXPORT_FORMAT>
+            <ADD_TO_STORED_FILES/>
+            <EXPORT_COLUMNS>#{columns}</EXPORT_COLUMNS>
+          </ExportList>
+        XML
+      end
     end
 
     def xml_calculate_query(query_id, email)
-      xml = ( '<Envelope><Body>'+
-                '<CalculateQuery>'+
-                  '<QUERY_ID>%s</QUERY_ID>'+
-                '</CalculateQuery>'+
-              '</Body></Envelope>'
-            ) % [query_id]
-      unless email.nil?
-        doc = Hpricot::XML(xml)
-        (doc/:CalculateQuery).append('<EMAIL>%s/EMAIL>' % email)
-        xml = doc.to_s
+      xml_wrapper do
+        <<-XML
+          <CalculateQuery>
+            <QUERY_ID>#{query_id}</QUERY_ID>
+            #{"<EMAIL>#{email}</EMAIL>" if email}
+          </CalculateQuery>
+        XML
       end
-      xml
     end
 
     def xml_import_list(map_file, source_file)
-      ( '<Envelope><Body>'+
-          '<ImportList>'+
-            '<MAP_FILE>%s</MAP_FILE>'+
-            '<SOURCE_FILE>%s</SOURCE_FILE>'+
-          '</ImportList>'+
-        '</Body></Envelope>'
-      ) % [map_file, source_file]
+      xml_wrapper do
+        <<-XML
+          <ImportList>
+            <MAP_FILE>#{map_file}</MAP_FILE>
+            <SOURCE_FILE>#{source_file}</SOURCE_FILE>
+          </ImportList>
+        XML
+      end
     end
 
     def xml_import_table(map_file, source_file)
-      ( '<Envelope><Body>'+
-          '<ImportTable>'+
-            '<MAP_FILE>%s</MAP_FILE>'+
-            '<SOURCE_FILE>%s</SOURCE_FILE>'+
-          '</ImportTable>'+
-        '</Body></Envelope>'
-      ) % [map_file, source_file]
+      xml_wrapper do
+        <<-XML
+          <ImportTable>
+            <MAP_FILE>#{map_file}</MAP_FILE>
+            <SOURCE_FILE>#{source_file}</SOURCE_FILE>
+          </ImportTable>
+        XML
+      end
     end
 
     def xml_map_file(list_info, columns, mappings, type="LIST")
@@ -514,27 +515,23 @@ module Silverpop
     end
 
     def xml_add_recipient(list_id, email, extra_columns, created_from)
-      xml = ( '<Envelope><Body>'+
-                '<AddRecipient>'+
-                  '<LIST_ID>%s</LIST_ID>'+
-                  '<CREATED_FROM>%s</CREATED_FROM>'+
-                  '<UPDATE_IF_FOUND>true</UPDATE_IF_FOUND>'+
-                  '<COLUMN>'+
-                    '<NAME>EMAIL</NAME>'+
-                    '<VALUE>%s</VALUE>'+
-                  '</COLUMN>'+
-                '</AddRecipient>'+
-              '</Body></Envelope>'
-      ) % [list_id, created_from, email]
-
-      doc = Hpricot::XML(xml)
-      if extra_columns.size > 0
-        extra_columns.each do |c|
-          (doc/:AddRecipient).append xml_add_recipient_column(c[:name], c[:value])
-        end
+      extra_columns = extra_columns.map do |c|
+        xml_add_recipient_column(c[:name], c[:value])
       end
-
-      doc.to_s
+      xml = xml_wrapper do
+        <<-XML
+          <AddRecipient>
+            <LIST_ID>#{list_id}</LIST_ID>
+            <CREATED_FROM>#{created_from}</CREATED_FROM>
+            <UPDATE_IF_FOUND>true</UPDATE_IF_FOUND>
+            <COLUMN>
+              <NAME>EMAIL</NAME>
+              <VALUE>#{email}</VALUE>
+            </COLUMN>
+            #{extra_columns.join}
+          </AddRecipient>
+        XML
+      end
     end
 
     def xml_update_recipient(list_id, old_email, new_email, extra_columns, created_from)
@@ -562,21 +559,18 @@ module Silverpop
     end
 
     def xml_add_recipient_column(name, value)
-      ( '<COLUMN>'+
-          '<NAME>%s</NAME>'+
-          '<VALUE>%s</VALUE>'+
-        '</COLUMN>'
-      ) % [name, value]
+      "<COLUMN><NAME>#{name}</NAME><VALUE>#{value}</VALUE></COLUMN>"
     end
 
     def xml_remove_recipient(list_id, email)
-      ( '<Envelope><Body>'+
-          '<RemoveRecipient>'+
-            '<LIST_ID>%s</LIST_ID>'+
-            '<EMAIL>%s</EMAIL>'+
-          '</RemoveRecipient>'+
-        '</Body></Envelope>'
-      ) % [list_id, email]
+      xml_wrapper do
+        <<-XML
+          <RemoveRecipient>
+            <LIST_ID>#{list_id}</LIST_ID>
+            <EMAIL>#{email}</EMAIL>
+          </RemoveRecipient>
+        XML
+      end
     end
 
     def xml_double_opt_in_recipient(list_id, email, extra_columns)
@@ -669,28 +663,30 @@ module Silverpop
     end
 
     def xml_associate_relational_table(list_id, table_id, field_mappings)
-      xml = ('<Envelope><Body>'+
-        '<JoinTable>'+
-          '<TABLE_ID>%s</TABLE_ID>'+
-          '<LIST_ID>%s</LIST_ID>'+
-        '</JoinTable>'+
-      '</Body></Envelope>') % [table_id, list_id]
-
-      doc = Hpricot::XML(xml)
-      if field_mappings.size > 0
-        field_mappings.each do |m|
-          (doc/:JoinTable).append xml_add_relational_table_mapping(m)
-        end
+      mappings = field_mappings.map { |m| xml_add_relational_table_mapping(m) }
+      xml_wrapper do
+        <<-XML
+          <JoinTable>
+            <TABLE_ID>#{table_id}</TABLE_ID>
+            <LIST_ID>#{list_id}</LIST_ID>
+            #{mappings.join}
+            </JoinTable>
+        XML
       end
-
-      doc.to_s
     end
 
     def xml_add_relational_table_mapping(mapping)
-      ('<MAP_FIELD>'+
-        '<LIST_FIELD>%s</LIST_FIELD>'+
-        '<TABLE_FIELD>%s</TABLE_FIELD>'+
-      '</MAP_FIELD>') % [mapping[:list_name], mapping[:table_name]]
+      <<-XML
+        <MAP_FIELD>
+          <LIST_FIELD>#{mapping[:list_name]}</LIST_FIELD>
+          <TABLE_FIELD>#{mapping[:table_name]}</TABLE_FIELD>
+        </MAP_FIELD>
+      XML
+    end
+
+    # Wraps the result of the block in envelope and body tags.
+    def xml_wrapper(&block)
+      "<Envelope><Body>#{block.call}</Body></Envelope>"
     end
   end
 end
