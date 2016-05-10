@@ -26,7 +26,7 @@ module Silverpop
     def success?
       return false if @response_xml.blank?
       doc = Nokogiri::XML(@response_xml)
-      doc.at('SUCCESS').text == 'true'
+      doc.at('SUCCESS').text.upcase == 'TRUE'
     end
 
     def error_message
