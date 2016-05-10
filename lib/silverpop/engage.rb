@@ -627,9 +627,9 @@ module Silverpop
               #{"<PersonalReplyTo>#{header[:personal_reply_to]}</PersonalReplyTo>" if header[:personal_reply_to]}
             </Header>
             <MessageBodies>
-              <HTMLBody>#{html_body}</HTMLBody>
-              #{"<AOLBody>#{aol_body}</AOLBody>" if aol_body}
-              #{"<TextBody>#{text_body}</TextBody>" if text_body}
+              <HTMLBody><![CDATA[#{strip_cdata(html_body)}]]></HTMLBody>
+              #{"<AOLBody><![CDATA[#{strip_cdata(aol_body)}]]></AOLBody>" if aol_body}
+              #{"<TextBody><![CDATA[#{strip_cdata(text_body)}]]></TextBody>" if text_body}
             </MessageBodies>
             <ClickThroughs>#{xml_click_throughs(click_throughs).join}</ClickThroughs>
             <ForwardToFriend>
