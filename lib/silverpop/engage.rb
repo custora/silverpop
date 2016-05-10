@@ -514,13 +514,13 @@ module Silverpop
     end
 
     def xml_add_relational_rows(data)
-      data.map { |row| "<ROW>#{xml_add_relational_row(row)}</ROW>" }.join
+      data.map { |row| "<ROW>#{xml_add_relational_row(row).join}</ROW>" }.join
     end
 
     def xml_add_relational_row(row_data)
       row_data.map do |column|
         "<COLUMN name=\"#{column[:name]}\"><![CDATA[#{column[:value]}]]></COLUMN>"
-      end.join
+      end
     end
 
     def xml_create_relational_table(schema)
@@ -587,6 +587,56 @@ module Silverpop
         end
       end
       xml_wrapper { "<RawRecipientDataExport>#{xml_fields}</RawRecipientDataExport>" }
+    end
+
+    # Saves a new or updating an existing mailing template that may be used against a
+    # Database, Contact List or Query.  This will replace any existing template with the
+    # same MailingName element, and will update any existing template specified with a MailingId.
+    def xml_save_mailing(header:, html_body:, aol_body: nil, text_body: nil, click_throughs: [])
+      xml_wrapper do
+        <<-XML
+          <SaveMailing>
+            <Header>
+              #{"<MailingId>#{header[:id]}</MailingId>" if header[:id]}
+              <MailingName><![CDATA[#{strip_cdata(header[:name])}]]></MailingName>
+              <Subject><![CDATA[#{strip_cdata(header[:subject])}]]></Subject>
+              <ListID>#{header[:list_id]}</ListID>
+              <FromName><![CDATA[#{strip_cdata(header[:from_name])}]]></FromName>
+              <FromAddress><![CDATA[#{strip_cdata(header[:from_address])}]]></FromAddress>
+              <ReplyTo>#{header[:reply_to]}</ReplyTo>
+              <Visibility>#{header[:visibility] || 1}</Visibility>
+              <Encoding>#{header[:encoding] || 0}</Encoding>
+              <TrackingLevel>#{header[:tracking_level] || 4}</TrackingLevel>
+              #{"<FolderPath>#{header[:folder_path]}</FolderPath>" if header[:folder_path]}
+              #{"<ClickHereMessage/>" if header[:click_here_message]}
+              #{"<IsCrmTemplate>#{header[:is_crm_template]}</IsCrmTemplate>" unless header[:is_crm_template].nil?}
+              #{"<HasSpCrmBlock>#{header[:has_sp_crm_block]}</HasSpCrmBlock>" unless header[:has_sp_crm_block].nil?}
+              #{"<PersonalFromName>#{header[:personal_from_name]}</PersonalFromName>" if header[:personal_from_name]}
+              #{"<PersonalFromAddress>#{header[:personal_from_address]}</PersonalFromAddress>" if header[:personal_from_address]}
+              #{"<PersonalReplyTo>#{header[:personal_reply_to]}</PersonalReplyTo>" if header[:personal_reply_to]}
+            </Header>
+            <MessageBodies>
+              <HTMLBody>#{html_body}</HTMLBody>
+              #{"<AOLBody>#{aol_body}</AOLBody>" if aol_body}
+              #{"<TextBody>#{text_body}</TextBody>" if text_body}
+            </MessageBodies>
+            <ClickThroughs>#{xml_click_throughs(click_throughs).join}</ClickThroughs>
+            <ForwardToFriend>
+              <ForwardType>0</ForwardType>
+            </ForwardToFriend>
+          </SaveMailing>
+        XML
+      end
+    end
+
+    def xml_click_throughs(click_throughs)
+      click_throughs.map do |ct|
+        <<-XML
+          <ClickThroughName>#{ct[:name]}</ClickThroughName>
+          <ClickThroughURL>#{ct[:url]}</ClickThroughURL>
+          <ClickThroughType>#{ct[:type] || 2}</ClickThroughType>
+        XML
+      end
     end
 
     # Wraps the result of the block in envelope and body tags.
