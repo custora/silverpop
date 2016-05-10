@@ -11,54 +11,56 @@ module Silverpop
     end
 
     def initialize
-      @session_id, @session_encoding, @response_xml = nil, nil, nil
+      @session_id = nil
+      @session_encoding = nil
+      @response_xml = nil
     end
 
     ###
     #   QUERY AND SERVER RESPONSE
     ###
     def query(xml)
-      (@response_xml = super(xml, @session_encoding.to_s)).tap do 
+      (@response_xml = super(xml, @session_encoding.to_s)).tap do
         log_error unless success?
       end
     end
 
     def success?
       return false if @response_xml.blank?
-
-      doc = Hpricot::XML(@response_xml)
-      doc.at('SUCCESS').innerHTML.downcase == 'true'
+      doc = Nokogiri::XML(@response_xml)
+      doc.at('SUCCESS').text == 'true'
     end
 
     def error_message
       return false if success?
-      doc = Hpricot::XML(@response_xml)
-      strip_cdata( doc.at('FaultString').innerHTML )
+      doc = Nokogiri::XML(@response_xml)
+      strip_cdata(doc.at('FaultString').text)
     end
 
     ###
     #   SESSION MANAGEMENT
     ###
     def logged_in?
-      @session_id.nil? && @session_encoding.nil?
+      @session_id && @session_encoding
     end
 
     def login
-      @session_id, @session_encoding = nil, nil
-
-      doc = Hpricot::XML( query( xml_login( username, password ) ) )
-      if doc.at('SUCCESS').innerHTML.downcase == 'true'
-        @session_id       = doc.at('SESSIONID').innerHTML
+      logout if @session_id || @session_encoding
+      doc = Nokogiri::XML(query(xml_login(username, password)))
+      if doc.at('SUCCESS').text == 'true'
+        @session_id = doc.at('SESSIONID').innerHTML
         @session_encoding = doc.at('SESSION_ENCODING').innerHTML
       end
-
       success?
     end
 
     def logout
-      return true unless logged_in?
-
-      response_xml = query( xml_logout )
+      return false unless logged_in?
+      response_xml = query(xml_logout)
+      if success?
+        @session_id = nil
+        @session_encoding = nil
+      end
       success?
     end
 
@@ -66,8 +68,8 @@ module Silverpop
     #   JOB MANAGEMENT
     ###
     def get_job_status(job_id)
-      response_xml = query( xml_get_job_status(job_id) )
-      Hpricot::XML( response_xml ).at('JOB_STATUS').innerHTML
+      response_xml = query(xml_get_job_status(job_id))
+      Nokogiri::XML(response_xml).at('JOB_STATUS').text
     end
 
     ###
@@ -150,8 +152,8 @@ module Silverpop
             else
               "<#{field.upcase}>#{value}</#{field.upcase}>"
             end
-          else 
-            raise ArgumentError, "#{field} didn't match any case" 
+          else
+            raise ArgumentError, "#{field} didn't match any case"
         end
       end
 
@@ -173,9 +175,9 @@ module Silverpop
         ftp.passive = true # IMPORTANT! SILVERPOP NEEDS THIS OR IT ACTS WEIRD.
         ftp.login(ftp_username, ftp_password)
         ftp.chdir('download')
-        
+
         ftp.getbinaryfile(file_name, destination_file)
-        
+
         ftp.close
       end
 
@@ -201,7 +203,7 @@ module Silverpop
         ftp.chdir('download')
 
         ftp.gettextfile(file_name, destination_file)
-        
+
         ftp.close
       end
     end
@@ -299,7 +301,7 @@ module Silverpop
   #   API XML TEMPLATES
   ###
   protected
-  
+
     def map_type(type) # some API calls want a number, some want a name. This maps the name back to the number
       {
         "TEXT" => 0,
