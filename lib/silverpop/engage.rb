@@ -405,26 +405,21 @@ module Silverpop
     end
 
     def xml_map_file(list_info, columns, mappings, type="LIST")
-      return false unless (columns.size > 0 && mappings.size > 0)
+      <<-XML
+        <#{type}_IMPORT>
+          <#{type}_INFO>
+            #{xml_map_file_list_info(list_info, type)}
+          </#{type}_INFO>
 
-      xml = "<#{type}_IMPORT>"+
-              "<#{type}_INFO></#{type}_INFO>"+
-              '<COLUMNS></COLUMNS>'+
-              '<MAPPING></MAPPING>'+
-            "</#{type}_IMPORT>"
+          <COLUMNS>
+            #{columns.map { |c| xml_map_file_column(c) }.join}
+          </COLUMNS>
 
-      doc = Hpricot::XML(xml)
-      doc.at("#{type}_INFO").innerHTML = xml_map_file_list_info(list_info, type)
-
-      str = ''
-      columns.each { |c| str += xml_map_file_column(c) }
-      doc.at('COLUMNS').innerHTML = str
-
-      str = ''
-      mappings.each { |m| str += xml_map_file_mapping_column(m) }
-      doc.at('MAPPING').innerHTML = str
-
-      doc.to_s
+          <MAPPING>
+            #{mappings.map { |m| xml_map_file_mapping_column(m) }.join}
+          </MAPPING>
+        </#{type}_IMPORT>"
+      XML
     end
 
     def xml_map_file_list_info(list_info, type = "LIST")
@@ -456,18 +451,14 @@ module Silverpop
       #   file contains column definitions. The List Import API does not use
       #   these headers, so if you have them, this element must be set to true
       #   so it can skip the first line.
-      ( '<ACTION>%s</ACTION>'+
-        "<#{type}_NAME>%s</#{type}_NAME>"+
-        "<#{type}_ID>%s</#{type}_ID>"+
-        '<FILE_TYPE>%s</FILE_TYPE>'+
-        '<HASHEADERS>%s</HASHEADERS>'+
-        "<#{type}_VISIBILITY>%s</#{type}_VISIBILITY>"
-      ) % [ list_info[:action],
-            list_info[:list_name],
-            list_info[:list_id],
-            list_info[:file_type],
-            list_info[:has_headers],
-            list_info[:list_visibility] ]
+      <<-XML
+        <ACTION>#{list_info[:action]}</ACTION>
+        <#{type}_NAME>#{list_info[:list_name]}</#{type}_NAME>
+        <#{type}_ID>#{list_info[:list_id]}</#{type}_ID>
+        <FILE_TYPE>#{list_info[:file_type]}</FILE_TYPE>
+        <HASHEADERS>#{list_info[:has_headers]}</HASHEADERS>
+        <#{type}_VISIBILITY>#{list_info[:list_visibility]}</#{type}_VISIBILITY>
+      XML
     end
 
     def xml_map_file_column(column)
@@ -483,39 +474,33 @@ module Silverpop
       #     6 – Select one
       #     8 – Segmenting
       #     9 – System (used for defining EMAIL field only)
-
+      #
       # KEY_COLUMN
       #   Added to field definition and defines a field as a unique key for the
       #   list when set to True. You can define more than one unique field for
       #   each list.
-
-      ( '<COLUMN>'+
-          '<NAME>%s</NAME>'+
-          '<TYPE>%s</TYPE>'+
-          '<IS_REQUIRED>%s</IS_REQUIRED>'+
-          '<KEY_COLUMN>%s</KEY_COLUMN>'+
-        '</COLUMN>'
-      ) % [ column[:name].upcase,
-            column[:type],
-            column[:is_required],
-            column[:key_column] ]
+      <<-XML
+        <COLUMN>
+          <NAME>#{column[:name].upcase}</NAME>
+          <TYPE>#{column[:type]}</TYPE>
+          <IS_REQUIRED>#{column[:is_required]}</IS_REQUIRED>
+          <KEY_COLUMN>#{column[:key_column]}</KEY_COLUMN>
+        </COLUMN>
+      XML
     end
 
     def xml_map_file_mapping_column(column)
-      column = { :include => true }.merge(column)
-
-      ( '<COLUMN>'+
-          '<INDEX>%s</INDEX>'+
-          '<NAME>%s</NAME>'+
-          '<INCLUDE>true</INCLUDE>'+
-        '</COLUMN>'
-      ) % [ column[:index],
-            column[:name].upcase,
-            column[:include] ]
+      <<-XML
+        <COLUMN>
+          <INDEX>#{column[:index]}</INDEX>
+          <NAME>#{column[:name].upcase}</NAME>
+          <INCLUDE>#{column[:include].nil? ? column[:include] : true}</INCLUDE>
+        </COLUMN>
+      XML
     end
 
     def xml_add_recipient(list_id, email, extra_columns, created_from)
-      xml = xml_wrapper do
+      xml_wrapper do
         <<-XML
           <AddRecipient>
             <LIST_ID>#{list_id}</LIST_ID>
