@@ -176,7 +176,7 @@ module Silverpop
       File.open(path, 'w') do |file|
         file.puts(xml_map_file(list_info, columns, mappings, contact_lists, type))
       end
-      file_path
+      path
     end
 
     ###
