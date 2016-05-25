@@ -360,7 +360,7 @@ module Silverpop
           #{contact_lists.any? ? "<CONTACT_LISTS>" : nil }
             #{contact_lists.map { |id| "<CONTACT_LIST_ID>#{id}</CONTACT_LIST_ID>" }.join}
           #{contact_lists.any? ? "</CONTACT_LISTS>" : nil }
-        </#{type}_IMPORT>"
+        </#{type}_IMPORT>
       XML
     end
 
@@ -395,7 +395,7 @@ module Silverpop
       #   so it can skip the first line.
       <<-XML
         <ACTION>#{list_info[:action]}</ACTION>
-        <#{type}_NAME>#{list_info[:list_name]}</#{type}_NAME>
+        #{"<#{type}_NAME>#{list_info[:list_name]}</#{type}_NAME>" if list_info[:list_name]}
         <#{type}_ID>#{list_info[:list_id]}</#{type}_ID>
         <LIST_TYPE>#{list_info[:list_type]}</LIST_TYPE>
         <FILE_TYPE>#{list_info[:file_type]}</FILE_TYPE>
