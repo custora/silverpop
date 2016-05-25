@@ -22,7 +22,7 @@ module Silverpop
     end
 
     def query
-      @response_doc = Hpricot::XML( super(@query_doc.to_s) )
+      @response_doc = Nokogiri::XML( super(@query_doc.to_s) )
       log_error unless success?
     end
 
@@ -82,11 +82,7 @@ module Silverpop
     end
 
     def add_personalizations(recipient_xml, personalizations)
-      r_doc = Hpricot::XML(recipient_xml)
-      personalizations.each do |p|
-        (r_doc/:RECIPIENT).append xml_recipient_personalization p
-      end
-      r_doc.to_s
+      fail "Not implemented"
     end
 
   protected
@@ -116,8 +112,9 @@ module Silverpop
             o[:show_all_send_detail],
             o[:send_as_batch],
             o[:no_retry_on_failure] ]
-      @query_doc = Hpricot::XML(@xml)
 
+      @query_doc = Nokogiri::XML(@xml)
+      fail "Not implemented"
       unless o[:transaction_id].blank?
         (@query_doc/:XTMAILING).append(
             '<TRANSACTION_ID>%s</TRANSACTION_ID>' % o[:transaction_id] )
