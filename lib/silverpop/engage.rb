@@ -158,12 +158,10 @@ module Silverpop
         ftp.puttextfile(map_file_path)
         ftp.puttextfile(source_file_path)
       end
-      map_file_ftp_path = File.basename(map_file_path)
-      source_file_ftp_path = File.basename(source_file_path)
-      query xml_import_table(File.basename(map_file_path), File.basename(source_file_path))
+      query(xml_import_table(File.basename(map_file_path), File.basename(source_file_path)))
     end
 
-    def create_map_file (:path, :list_info, columns: [], :mappings, contact_lists: [], type = "LIST")
+    def create_map_file(:path, :list_info, columns: [], :mappings, contact_lists: [], type = "LIST")
       # SAMPLE_PARAMS:
       # list_info = { :action       => 'ADD_AND_UPDATE',
       #               :list_id      => 123456,
@@ -671,7 +669,7 @@ module Silverpop
     end
 
     def xml_sync_fields(field_names)
-      "<SYNC_FIELDS>#{field_names.map { |n| "<SYNC_FIELD><NAME>#{n}</NAME></SYNC_FIELD>" }}</SYNC_FIELDS>"
+      "<SYNC_FIELDS>#{field_names.map { |n| "<SYNC_FIELD><NAME>#{n}</NAME></SYNC_FIELD>" }.join}</SYNC_FIELDS>"
     end
 
     # Wraps the result of the block in envelope and body tags.
