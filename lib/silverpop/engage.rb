@@ -112,9 +112,9 @@ module Silverpop
         ftp.puttextfile(map_file_path)
         ftp.puttextfile(source_file_path)
       end
-      map_file_ftp_path = File.basename(map_file_path)
-      source_file_ftp_path = File.basename(source_file_path)
-      query xml_import_list(File.basename(map_file_path), File.basename(source_file_path))
+
+      response_xml = query(xml_import_list(File.basename(map_file_path), File.basename(source_file_path)))
+      Nokogiri::XML(response_xml).at('JOB_ID').text
     end
 
     class RawRecipientDataOptions < OpenStruct
@@ -163,7 +163,7 @@ module Silverpop
       query xml_import_table(File.basename(map_file_path), File.basename(source_file_path))
     end
 
-    def create_map_file (file_path, list_info, columns, mappings, type = "LIST")
+    def create_map_file (:path, :list_info, columns: [], :mappings, contact_lists: [], type = "LIST")
       # SAMPLE_PARAMS:
       # list_info = { :action       => 'ADD_AND_UPDATE',
       #               :list_id      => 123456,
@@ -344,20 +344,24 @@ module Silverpop
       end
     end
 
-    def xml_map_file(list_info, columns, mappings, type="LIST")
+    def xml_map_file(list_info, columns, mappings, contact_lists, type="LIST")
       <<-XML
         <#{type}_IMPORT>
           <#{type}_INFO>
             #{xml_map_file_list_info(list_info, type)}
           </#{type}_INFO>
 
-          <COLUMNS>
+          #{columns.any? ? "<COLUMNS>" : nil}
             #{columns.map { |c| xml_map_file_column(c) }.join}
-          </COLUMNS>
+          #{columns.any? ? "</COLUMNS>" : nil}
 
           <MAPPING>
             #{mappings.map { |m| xml_map_file_mapping_column(m) }.join}
           </MAPPING>
+
+          #{contact_lists.any? ? "<CONTACT_LISTS>" : nil }
+            #{contact_lists.map { |id| "<CONTACT_LIST_ID>#{id}</CONTACT_LIST_ID>" }.join}
+          #{contact_lists.any? ? "</CONTACT_LISTS>" : nil }
         </#{type}_IMPORT>"
       XML
     end
@@ -395,9 +399,11 @@ module Silverpop
         <ACTION>#{list_info[:action]}</ACTION>
         <#{type}_NAME>#{list_info[:list_name]}</#{type}_NAME>
         <#{type}_ID>#{list_info[:list_id]}</#{type}_ID>
+        <LIST_TYPE>#{list_info[:list_type]}</LIST_TYPE>
         <FILE_TYPE>#{list_info[:file_type]}</FILE_TYPE>
         <HASHEADERS>#{list_info[:has_headers]}</HASHEADERS>
         <#{type}_VISIBILITY>#{list_info[:list_visibility]}</#{type}_VISIBILITY>
+        #{xml_sync_fields(list_info[:sync_fields])}
       XML
     end
 
@@ -662,6 +668,10 @@ module Silverpop
           </CreateContactList>
         XML
       end
+    end
+
+    def xml_sync_fields(field_names)
+      "<SYNC_FIELDS>#{field_names.map { |n| "<SYNC_FIELD><NAME>#{n}</NAME></SYNC_FIELD>" }}</SYNC_FIELDS>"
     end
 
     # Wraps the result of the block in envelope and body tags.
