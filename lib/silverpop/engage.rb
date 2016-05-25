@@ -173,8 +173,8 @@ module Silverpop
       # mappings  = [ { :index=>1, :name=>'EMAIL', :include=>true },
       #               { :index=>2, :name=>'FIRST_NAME', :include=>true },
       #               { :index=>3, :name=>'LAST_NAME', :include=>true } ]
-      File.open(file_path, 'w') do |file|
-        file.puts(xml_map_file(list_info, columns, mappings, type))
+      File.open(path, 'w') do |file|
+        file.puts(xml_map_file(list_info, columns, mappings, contact_lists, type))
       end
       file_path
     end
