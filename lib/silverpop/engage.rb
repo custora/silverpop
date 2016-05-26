@@ -73,7 +73,7 @@ module Silverpop
     ###
     #   LIST MANAGEMENT
     ###
-    def get_lists(visibility, list_type folder_id = nil)
+    def get_lists(visibility, list_type, folder_id = nil)
       # VISIBILITY
       # Required. Defines the visibility of the lists to return.
       # * 0 – Private
