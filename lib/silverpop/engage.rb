@@ -73,7 +73,7 @@ module Silverpop
     ###
     #   LIST MANAGEMENT
     ###
-    def get_lists(visibility, list_type)
+    def get_lists(visibility, list_type folder_id = nil)
       # VISIBILITY
       # Required. Defines the visibility of the lists to return.
       # * 0 – Private
@@ -89,7 +89,7 @@ module Silverpop
       # * 13 – Suppression Lists
       # * 15 – Relational Tables
       # * 18 – Contact Lists
-      query(xml_get_lists(visibility, list_type))
+      query(xml_get_lists(visibility, list_type, folder_id))
     end
 
     def get_list(id, fields)
@@ -283,12 +283,13 @@ module Silverpop
       end
     end
 
-    def xml_get_lists(visibility, list_type)
+    def xml_get_lists(visibility, list_type, folder_id)
       xml_wrapper do
         <<-XML
           <GetLists>
             <VISIBILITY>#{visibility}</VISIBILITY>
             <LIST_TYPE>#{list_type}</LIST_TYPE>
+            #{"<FOLDER_ID>#{folder_id}</FOLDER_ID>" if folder_id}
           </GetLists>
         XML
       end
