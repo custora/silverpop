@@ -73,7 +73,7 @@ module Silverpop
 
     private
 
-    JOB_POLLING_WAIT_SECONDS = 5
+    JOB_POLLING_WAIT_SECONDS = 20
     SilverpopJobTimeout = Class.new(StandardError)
 
     def on_job_ready(job_id)
