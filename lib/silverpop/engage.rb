@@ -236,6 +236,13 @@ module Silverpop
       query(xml_save_mailing(header, html_body, aol_body, text_body, click_throughs))
     end
 
+    # Currently only supports using existing template content in the top-level folder.
+    # Consult API documentation and tweak XML to handle those additional options.
+    def schedule_mailing(template_id:, list_id:, name:, use_html: true, visibility: 1, suppression_list_ids: [])
+      xml = query(xml_schedule_mailing(template_id, list_id, name, use_html, visibility, suppression_list_ids))
+      Nokogiri::XML(xml).at('MAILING_ID').text
+    end
+
   ###
   #   API XML TEMPLATES
   ###
@@ -671,6 +678,25 @@ module Silverpop
 
     def xml_sync_fields(field_names)
       "<SYNC_FIELDS>#{field_names.map { |n| "<SYNC_FIELD><NAME>#{n}</NAME></SYNC_FIELD>" }.join}</SYNC_FIELDS>"
+    end
+
+    def xml_schedule_mailing(template_id, list_id, name, use_html, visibility, suppression_list_ids)
+      sids = suppression_list_ids.map do |id|
+        "<SUPPRESSION_LIST_ID>#{id}</SUPPRESSION_LIST_ID>"
+      end
+
+      xml_wrapper do
+        <<-XML
+          <ScheduleMailing>
+            <TEMPLATE_ID>#{template_id}</TEMPLATE_ID>
+            <LIST_ID>#{list_id}</LIST_ID>
+            <MAILING_NAME>#{name}</MAILING_NAME>
+            #{use_html ? "<SEND_HTML/><SEND_TEXT/>": "<SEND_TEXT/>"}
+            #{sids.any? ? "<SUPPRESSION_LISTS>#{sids.join}</SUPPRESSION_LISTS>" : nil}
+            <VISIBILITY>#{visibility}</VISIBILITY>
+          </ScheduleMailing>
+        XML
+      end
     end
 
     # Wraps the result of the block in envelope and body tags.
