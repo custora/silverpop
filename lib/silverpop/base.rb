@@ -68,7 +68,7 @@ module Silverpop
     end
 
     def strip_cdata(string)
-      string.sub('<![CDATA[', '').sub(']]>', '')
+      (string || '').sub('<![CDATA[', '').sub(']]>', '')
     end
 
     private
