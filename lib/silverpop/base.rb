@@ -71,8 +71,6 @@ module Silverpop
       (string || '').sub('<![CDATA[', '').sub(']]>', '')
     end
 
-    private
-
     JOB_POLLING_WAIT_SECONDS = 20
     SilverpopJobTimeout = Class.new(StandardError)
 
