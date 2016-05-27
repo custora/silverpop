@@ -17,9 +17,11 @@ module Silverpop
     ###
     #   QUERY AND SERVER RESPONSE
     ###
-    def query(xml)
+
+    SilverpopEngageError = Class.new(RuntimeError)
+    def query(xml, fail_on_error: true)
       (@response_xml = super(xml, @session_encoding.to_s)).tap do
-        log_error unless success?
+        raise SilverpopEngageError, error_message unless success? && !fail_on_error
       end
     end
 
@@ -114,7 +116,6 @@ module Silverpop
       end
 
       response_xml = query(xml_import_list(File.basename(map_file_path), File.basename(source_file_path)))
-      Nokogiri::XML(response_xml).at('JOB_ID').text
     end
 
     class RawRecipientDataOptions < OpenStruct
@@ -260,10 +261,6 @@ module Silverpop
       "SEGMENTING" => 8,
       "EMAIL" => 9
     }
-
-    def log_error
-      logger.debug '*** Silverpop::Engage Error: ' + error_message
-    end
 
     def xml_login(username, password)
       xml_wrapper do
