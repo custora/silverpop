@@ -244,6 +244,10 @@ module Silverpop
       Nokogiri::XML(xml).at('MAILING_ID').text
     end
 
+    def get_mailing_templates(visibility: 1)
+      query(xml_get_mailing_templates(visibility))
+    end
+
   ###
   #   API XML TEMPLATES
   ###
@@ -693,6 +697,12 @@ module Silverpop
             <VISIBILITY>#{visibility}</VISIBILITY>
           </ScheduleMailing>
         XML
+      end
+    end
+
+    def xml_get_mailing_templates(visibility)
+      xml_wrapper do
+        "<GetMailingTemplates><VISIBILITY>#{visibility}</VISIBILITY></GetMailingTemplates>"
       end
     end
 
