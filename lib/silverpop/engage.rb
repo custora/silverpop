@@ -21,7 +21,7 @@ module Silverpop
     SilverpopEngageError = Class.new(RuntimeError)
     def query(xml, fail_on_error: true)
       (@response_xml = super(xml, @session_encoding.to_s)).tap do
-        raise SilverpopEngageError, error_message unless success? && !fail_on_error
+        raise SilverpopEngageError, error_message unless success? || !fail_on_error
       end
     end
 
