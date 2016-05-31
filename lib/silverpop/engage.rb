@@ -248,6 +248,10 @@ module Silverpop
       query(xml_get_mailing_templates(visibility))
     end
 
+    def list_recipient_mailings(list_id:, recipient_id: nil)
+      query(xml_list_recipient_mailings(list_id, recipient_id))
+    end
+
   ###
   #   API XML TEMPLATES
   ###
@@ -703,6 +707,17 @@ module Silverpop
     def xml_get_mailing_templates(visibility)
       xml_wrapper do
         "<GetMailingTemplates><VISIBILITY>#{visibility}</VISIBILITY></GetMailingTemplates>"
+      end
+    end
+
+    def xml_list_recipient_mailings(list_id, recipient_id)
+      xml_wrapper do
+        <<-XML
+          <ListRecipientMailings>
+            <LIST_ID>#{list_id}</LIST_ID>
+            #{"<RECIPIENT_ID>#{recipient_id}</RECIPIENT_ID>" if recipient_id}
+          </ListRecipientMailings>
+        XML
       end
     end
 
