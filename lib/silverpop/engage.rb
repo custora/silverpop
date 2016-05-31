@@ -255,7 +255,7 @@ module Silverpop
     def get_sent_mailings_for_list(list_id:, start_date:, end_date:, options: {})
       start_date = start_date.strftime('%m/%d/%Y %H:%M:%S')
       end_date = end_date.strftime('%m/%d/%Y %H:%M:%S')
-      query(xml_get_sent_mailings_for_list(list_id, start_date, end_date, options)
+      query(xml_get_sent_mailings_for_list(list_id, start_date, end_date, options))
     end
 
   ###
