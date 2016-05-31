@@ -248,8 +248,14 @@ module Silverpop
       query(xml_get_mailing_templates(visibility))
     end
 
-    def list_recipient_mailings(list_id:, recipient_id: nil)
+    def list_recipient_mailings(list_id:, recipient_id:)
       query(xml_list_recipient_mailings(list_id, recipient_id))
+    end
+
+    def get_sent_mailings_for_list(list_id:, start_date:, end_date:, options: {})
+      start_date = start_date.strftime('%m/%d/%Y %H:%M:%S')
+      end_date = end_date.strftime('%m/%d/%Y %H:%M:%S')
+      query(xml_get_sent_mailings_for_list(list_id, start_date, end_date, options)
     end
 
   ###
@@ -718,6 +724,21 @@ module Silverpop
             #{"<RECIPIENT_ID>#{recipient_id}</RECIPIENT_ID>" if recipient_id}
           </ListRecipientMailings>
         XML
+      end
+    end
+
+    def xml_get_sent_mailings_for_list(list_id, start_date, end_date, opts)
+      xml_wrapper do
+        required_xml = <<-XML
+          <GetSentMailingsForList>
+            <LIST_ID>#{list_id}</LIST_ID>
+            <DATE_START>#{start_date}</DATE_START>
+            <DATE_END>#{end_date}</DATE_END>
+        XML
+        optional_xml = opts.keys.each_with_object([]) do |key, arr|
+          arr << "<#{key.upcase}/>" if opt[key]
+        end
+        required_xml + optional_xml.join + "</GetSentMailingsForList>"
       end
     end
 
