@@ -736,7 +736,7 @@ module Silverpop
             <DATE_END>#{end_date}</DATE_END>
         XML
         optional_xml = opts.keys.each_with_object([]) do |key, arr|
-          arr << "<#{key.upcase}/>" if opt[key]
+          arr << "<#{key.upcase}/>" if opts[key]
         end
         required_xml + optional_xml.join + "</GetSentMailingsForList>"
       end
