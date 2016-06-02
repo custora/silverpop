@@ -610,6 +610,14 @@ module Silverpop
               #{options.columns.map { |c| "<COLUMN><NAME>#{c}</NAME></COLUMN>" }.join}
             </COLUMNS>
           XML
+        elsif field == :mailing_ids
+          if mailing_ids.length == 1
+            "<MAILING_ID>#{mailing_ids.first}</MAILING_ID>"
+          elsif mailing_ids.length > 1
+            mailing_ids.map { |id| "<MAILING><MAILING_ID>#{id}</MAILING_ID></MAILING>"}.join
+          else
+            ''
+          end
         elsif field.is_a?(Symbol)
           if options.send(field) == true
             "<#{field.upcase}/>"
@@ -617,7 +625,7 @@ module Silverpop
             "<#{field.upcase}>#{options.send(field)}</#{field.upcase}>"
           end
         else
-          raise ArgumentError, "Invalid field '#{field}' (#{field.class})."
+          raise ArgumentError, "Field '#{field}' must be a symbol (#{field.class})."
         end
       end
       xml_wrapper { "<RawRecipientDataExport>#{xml_fields}</RawRecipientDataExport>" }
