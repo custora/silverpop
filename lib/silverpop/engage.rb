@@ -140,7 +140,7 @@ module Silverpop
       file_name = doc.at('FILE_PATH').text
       job_id = doc.at('JOB_ID').text
       on_job_ready(job_id) { download_from_ftp(file_name, destination_file) }
-      self
+      file_name
     end
 
     def export_list(id, fields, destination_file)
