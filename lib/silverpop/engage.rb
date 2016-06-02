@@ -603,7 +603,7 @@ module Silverpop
     end
 
     def xml_raw_recipient_data_export(options)
-      xml_fields = options.fields.map do |field|
+      xml_fields = options.map do |field, value|
         if field == :columns
           <<-XML
             <COLUMNS>
@@ -611,15 +611,15 @@ module Silverpop
             </COLUMNS>
           XML
         elsif field == :mailing_ids
-          if mailing_ids.length == 1
+          if options[:mailing_ids].length == 1
             "<MAILING_ID>#{mailing_ids.first}</MAILING_ID>"
-          elsif mailing_ids.length > 1
-            mailing_ids.map { |id| "<MAILING><MAILING_ID>#{id}</MAILING_ID></MAILING>"}.join
+          elsif options[:mailing_ids].length > 1
+            options[:mailing_ids].map { |id| "<MAILING><MAILING_ID>#{id}</MAILING_ID></MAILING>"}.join
           else
             ''
           end
         elsif field.is_a?(Symbol)
-          if options.send(field) == true
+          if options[field] == true
             "<#{field.upcase}/>"
           else
             "<#{field.upcase}>#{options.send(field)}</#{field.upcase}>"
