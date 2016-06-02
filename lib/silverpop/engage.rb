@@ -612,7 +612,7 @@ module Silverpop
           XML
         elsif field == :mailing_ids
           if options[:mailing_ids].length == 1
-            "<MAILING_ID>#{mailing_ids.first}</MAILING_ID>"
+            "<MAILING_ID>#{@options[:mailing_ids].first}</MAILING_ID>"
           elsif options[:mailing_ids].length > 1
             options[:mailing_ids].map { |id| "<MAILING><MAILING_ID>#{id}</MAILING_ID></MAILING>"}.join
           else
