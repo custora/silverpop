@@ -611,18 +611,18 @@ module Silverpop
             </COLUMNS>
           XML
         elsif field == :mailing_ids
-          if options[:mailing_ids].length == 1
-            "<MAILING_ID>#{options[:mailing_ids].first}</MAILING_ID>"
-          elsif options[:mailing_ids].length > 1
-            options[:mailing_ids].map { |id| "<MAILING><MAILING_ID>#{id}</MAILING_ID></MAILING>"}.join
+          if value.length == 1
+            "<MAILING_ID>#{value.first}</MAILING_ID>"
+          elsif value.length > 1
+            value.map { |id| "<MAILING><MAILING_ID>#{id}</MAILING_ID></MAILING>"}.join
           else
             ''
           end
         elsif field.is_a?(Symbol)
-          if options[field] == true
+          if value == true
             "<#{field.upcase}/>"
           else
-            "<#{field.upcase}>#{options.send(field)}</#{field.upcase}>"
+            "<#{field.upcase}>#{value}</#{field.upcase}>"
           end
         else
           raise ArgumentError, "Field '#{field}' must be a symbol (#{field.class})."
