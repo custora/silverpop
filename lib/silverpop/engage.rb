@@ -99,7 +99,7 @@ module Silverpop
     end
 
     def get_list_metadata(list_id)
-      query(xml_wrapper { "<GetListMetadata>#{list_id}</GetListMetadata>" })
+      query(xml_wrapper { "<GetListMetaData>#{list_id}</GetListMetaData>" })
     end
 
     def create_contact_list(database_id:, name:, visibility: 1, parent_folder_id: nil, parent_folder_path: nil)
