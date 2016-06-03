@@ -313,7 +313,7 @@ module Silverpop
       end
     end
 
-    def xml_export_list(id, fields)
+    def xml_export_list(id, fields, add_to_stored_files: false)
       columns = fields.map { |f| "<COLUMN>#{f}</COLUMN>" }.join
       xml_wrapper do
         <<-XML
@@ -321,7 +321,7 @@ module Silverpop
             <LIST_ID>#{id}</LIST_ID>
             <EXPORT_TYPE>ALL</EXPORT_TYPE>
             <EXPORT_FORMAT>CSV</EXPORT_FORMAT>
-            <ADD_TO_STORED_FILES/>
+            #{add_to_stored_files ? '<ADD_TO_STORED_FILES/>' : ''}
             <EXPORT_COLUMNS>#{columns}</EXPORT_COLUMNS>
           </ExportList>
         XML
