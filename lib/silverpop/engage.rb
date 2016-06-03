@@ -761,7 +761,7 @@ module Silverpop
     end
 
     def xml_add_list_column(list_id, column)
-      selection_values = (column[:select_values] || []).map { |v| "<VALUE>#{v}</VALUE>"}.join
+      selection_values = (column[:select_values] || []).map { |v| "<VALUE>#{v}</VALUE>"}
       xml_wrapper do
         <<-XML
           <AddListColumn>
@@ -769,7 +769,7 @@ module Silverpop
             <COLUMN_NAME>#{column[:name]}</COLUMN_NAME>
             <COLUMN_TYPE>#{column[:type]}</COLUMN_TYPE>
             #{column[:default] ? "<DEFAULT>#{column[:default]}</DEFAULT>" : ''}
-            #{selection_values.any? ? "<SELECTION_VALUES>#{selection_values}</SELECTION_VALUES>" : ''}
+            #{selection_values.any? ? "<SELECTION_VALUES>#{selection_values.join}</SELECTION_VALUES>" : ''}
           </AddListColumn>
         XML
       end
