@@ -98,6 +98,10 @@ module Silverpop
       query(xml_export_list(id, fields))
     end
 
+    def get_list_metadata(list_id)
+      query(xml_wrapper { "<GetListMetadata>#{list_id}</GetListMetadata>" })
+    end
+
     def create_contact_list(database_id:, name:, visibility: 1, parent_folder_id: nil, parent_folder_path: nil)
       query(xml_create_contact_list(database_id, name, visibility, parent_folder_id, parent_folder_path))
     end
