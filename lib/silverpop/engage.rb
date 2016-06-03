@@ -234,6 +234,12 @@ module Silverpop
       query(xml_associate_relational_table(list_id, table_id, field_mappings))
     end
 
+    # Column is a hash with :name, :type, optional :default value,
+    # and optional :selection_values (for 'select one' & 'multi-select' columns).
+    def add_list_column(list_id:, column:)
+      query(xml_add_list_column(list_id, column))
+    end
+
     ###
     #   MANAGE MAILINGS
     ###
@@ -751,6 +757,21 @@ module Silverpop
           arr << "<#{key.upcase}/>" if opts[key]
         end
         required_xml + optional_xml.join + "</GetSentMailingsForList>"
+      end
+    end
+
+    def xml_add_list_column(list_id, column)
+      selection_values = column[:select_values].map { |v| "<VALUE>#{v}</VALUE>"}.join
+      xml_wrapper do
+        <<-XML
+          <AddListColumn>
+            <LIST_ID>#{list_id}</LIST_ID>
+            <COLUMN_NAME>#{column[:name]}</COLUMN_NAME>
+            <COLUMN_TYPE>#{column[:type]}</COLUMN_TYPE>
+            #{column[:default] ? "<DEFAULT>#{column[:default]}</DEFAULT>" : ''}
+            #{selection_values.any? ? "<SELECTION_VALUES>#{selection_values}</SELECTION_VALUES>" : ''}
+          </AddListColumn>
+        XML
       end
     end
 
