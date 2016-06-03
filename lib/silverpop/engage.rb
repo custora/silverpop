@@ -761,7 +761,7 @@ module Silverpop
     end
 
     def xml_add_list_column(list_id, column)
-      selection_values = column[:select_values].map { |v| "<VALUE>#{v}</VALUE>"}.join
+      selection_values = (column[:select_values] || []).map { |v| "<VALUE>#{v}</VALUE>"}.join
       xml_wrapper do
         <<-XML
           <AddListColumn>
