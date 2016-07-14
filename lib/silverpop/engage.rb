@@ -249,8 +249,8 @@ module Silverpop
 
     # Currently only supports using existing template content in the top-level folder.
     # Consult API documentation and tweak XML to handle those additional options.
-    def schedule_mailing(template_id:, list_id:, name:, use_html: true, visibility: 1, suppression_list_ids: [])
-      xml = query(xml_schedule_mailing(template_id, list_id, name, use_html, visibility, suppression_list_ids))
+    def schedule_mailing(template_id:, list_id:, name:, use_html: true, visibility: 1, suppression_list_ids: [], custom_opt_out: nil)
+      xml = query(xml_schedule_mailing(template_id, list_id, name, use_html, visibility, suppression_list_ids, custom_opt_out))
       Nokogiri::XML(xml).at('MAILING_ID').text
     end
 
@@ -709,7 +709,7 @@ module Silverpop
       "<SYNC_FIELDS>#{field_names.map { |n| "<SYNC_FIELD><NAME>#{n}</NAME></SYNC_FIELD>" }.join}</SYNC_FIELDS>"
     end
 
-    def xml_schedule_mailing(template_id, list_id, name, use_html, visibility, suppression_list_ids)
+    def xml_schedule_mailing(template_id, list_id, name, use_html, visibility, suppression_list_ids, custom_opt_out)
       sids = suppression_list_ids.map do |id|
         "<SUPPRESSION_LIST_ID>#{id}</SUPPRESSION_LIST_ID>"
       end
@@ -722,6 +722,7 @@ module Silverpop
             <MAILING_NAME>#{name}</MAILING_NAME>
             #{use_html ? "<SEND_HTML/><SEND_TEXT/>": "<SEND_TEXT/>"}
             #{sids.any? ? "<SUPPRESSION_LISTS>#{sids.join}</SUPPRESSION_LISTS>" : nil}
+            #{custom_opt_out ? "<CUSTOM_OPT_OUT>#{custom_opt_out}</CUSTOM_OPT_OUT>" : nil}
             <VISIBILITY>#{visibility}</VISIBILITY>
           </ScheduleMailing>
         XML
