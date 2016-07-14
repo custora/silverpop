@@ -6,12 +6,14 @@ module Silverpop
     class << self
       attr_accessor :url, :username, :password
       attr_accessor :ftp_url, :ftp_port, :ftp_username, :ftp_password
+      attr_accessor :verbose
     end
 
     def initialize
       @session_id = nil
       @session_encoding = nil
       @response_xml = nil
+      @verbose = false
     end
 
     ###
@@ -20,7 +22,9 @@ module Silverpop
 
     SilverpopEngageError = Class.new(RuntimeError)
     def query(xml, fail_on_error: true)
+      puts xml if verbose
       (@response_xml = super(xml, @session_encoding.to_s)).tap do
+        puts @response_xml if verbose
         raise SilverpopEngageError, error_message unless success? || !fail_on_error
       end
     end
