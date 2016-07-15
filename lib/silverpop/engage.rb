@@ -6,14 +6,13 @@ module Silverpop
     class << self
       attr_accessor :url, :username, :password
       attr_accessor :ftp_url, :ftp_port, :ftp_username, :ftp_password
-      attr_accessor :verbose
     end
 
-    def initialize
+    def initialize(verbose: false)
       @session_id = nil
       @session_encoding = nil
       @response_xml = nil
-      @verbose = false
+      @verbose = verbose
     end
 
     ###
