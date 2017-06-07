@@ -101,6 +101,10 @@ module Silverpop
       query(xml_export_list(id, fields))
     end
 
+    def purge_list(id)
+      xml_purge_list(id)
+    end
+
     def get_list_metadata(list_id)
       query(xml_wrapper { "<GetListMetaData><LIST_ID>#{list_id}</LIST_ID></GetListMetaData>" })
     end
@@ -520,6 +524,19 @@ module Silverpop
             <LIST_ID>#{list_id}</LIST_ID>
             <EMAIL>#{email}</EMAIL>
           </RemoveRecipient>
+        XML
+      end
+    end
+
+    # Target is the list we want to purge source is the records we want to purge
+    # Thus supplying the same id for target and source will purge all records in the target
+    def xml_purge_list(id)
+      xml_wrapper do
+        <<-XML
+          <PurgeData>
+            <TARGET_ID>#{id}</TARGET_ID>
+            <SOURCE_ID>#{id}</SOURCE_ID>
+          </PurgeData>
         XML
       end
     end
