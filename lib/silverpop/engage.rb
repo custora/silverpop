@@ -102,7 +102,7 @@ module Silverpop
     end
 
     def purge_list(id)
-      xml_purge_list(id)
+      query(xml_purge_list(id))
     end
 
     def get_list_metadata(list_id)
