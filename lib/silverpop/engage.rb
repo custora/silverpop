@@ -173,7 +173,7 @@ module Silverpop
       query(xml_import_table(File.basename(map_file_path), File.basename(source_file_path)))
     end
 
-    def create_map_file(path:, list_info:, columns: [], mappings:, contact_lists: [], type: "LIST")
+    def create_map_file(path:, list_info:, columns: [], mappings:, contact_lists: [], type: "LIST", add_sync_fields: false)
       # SAMPLE_PARAMS:
       # list_info = { :action       => 'ADD_AND_UPDATE',
       #               :list_id      => 123456,
@@ -185,8 +185,9 @@ module Silverpop
       # mappings  = [ { :index=>1, :name=>'EMAIL', :include=>true },
       #               { :index=>2, :name=>'FIRST_NAME', :include=>true },
       #               { :index=>3, :name=>'LAST_NAME', :include=>true } ]
+      # add_sync_fields adds an extra outer sync_field XML element which seems to be needed for flex databases
       File.open(path, 'w') do |file|
-        file.puts(xml_map_file(list_info, columns, mappings, contact_lists, type))
+        file.puts(xml_map_file(list_info, columns, mappings, contact_lists, type, add_sync_fields))
       end
       path
     end
@@ -378,7 +379,7 @@ module Silverpop
       end
     end
 
-    def xml_map_file(list_info, columns, mappings, contact_lists, type="LIST")
+    def xml_map_file(list_info, columns, mappings, contact_lists, type="LIST", add_sync_fields=false)
       <<-XML
         <#{type}_IMPORT>
           <#{type}_INFO>
@@ -392,6 +393,15 @@ module Silverpop
           <MAPPING>
             #{mappings.map { |m| xml_map_file_mapping_column(m) }.join}
           </MAPPING>
+          #{if add_sync_fields
+              "<SYNC_FIELDS>
+                <SYNC_FIELD>
+                  <NAME>EMAIL</NAME>
+                </SYNC_FIELD>
+              </SYNC_FIELDS>"
+            else
+              nil
+            end}
 
           #{contact_lists.any? ? "<CONTACT_LISTS>" : nil }
             #{contact_lists.map { |id| "<CONTACT_LIST_ID>#{id}</CONTACT_LIST_ID>" }.join}
