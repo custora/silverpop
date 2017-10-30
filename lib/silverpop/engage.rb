@@ -101,7 +101,7 @@ module Silverpop
       query(xml_export_list(id, fields))
     end
 
-    def aster(id)
+    def purge_list(id)
       query(xml_purge_list(id))
     end
 
