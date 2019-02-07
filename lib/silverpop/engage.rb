@@ -61,6 +61,12 @@ module Silverpop
         @session_encoding = nil
       end
       success?
+
+    rescue => e
+      if e.message == 'Session has expired or is invalid'
+        @session_id = nil
+        @session_encoding = nil
+      end
     end
 
     def logged_in?
