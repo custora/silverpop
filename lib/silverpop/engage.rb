@@ -66,6 +66,8 @@ module Silverpop
       if e.message == 'Session has expired or is invalid'
         @session_id = nil
         @session_encoding = nil
+      else
+        raise e
       end
     end
 
